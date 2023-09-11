@@ -7,16 +7,16 @@
 
 -- Define the color of the plugin object in the design
 function GetColor(props)
-  return { 102, 102, 102 }
+  return { 11, 60, 128 }
 end
 
 -- The name that will initially display when dragged into a design
 function GetPrettyName(props)
-  return "My First Plugin, version " .. PluginInfo.Version
+  return "Adder Infinity KVM v" .. PluginInfo.BuildVersion
 end
 
 -- Optional function used if plugin has multiple pages
-PageNames = { "Control", "Setup" }  --List the pages within the plugin
+PageNames = { "Control" }  --List the pages within the plugin
 function GetPages(props)
   local pages = {}
   --[[ #include "pages.lua" ]]

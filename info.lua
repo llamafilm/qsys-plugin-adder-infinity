@@ -1,8 +1,9 @@
 PluginInfo = {
-  Name = "Base Plugin",
+  Name = "Adder Infinity Plugin",
   Version = "0.0",
-  BuildVersion = "0.0.0.0",
-  Id = "<guid>",
-  Author = "Your_Company",
-  Description = "A very basic plugin"  
+  BuildVersion = "1.0.0.0",
+  Id = "67cb0d58-1be8-4641-8e64-d1705a74d07e",
+  Author = "Elliott Balsley",
+  Description = "A plugin for Adder Infinity KVM",
+  Manufacturer = "Adder"
 }
