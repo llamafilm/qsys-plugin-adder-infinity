@@ -14,8 +14,8 @@ function update_controls()
   for i=1,10 do
     Controls.Receiver[i].Choices = rx_names
     Controls.Channel[i].Choices = chan_names
-    Controls.Mode[i].Choices = {"v", "s", "e", "p"}
-    Controls.Mode[i].String = "s"
+    Controls.Mode[i].Choices = {"video-only", "shared", "exclusive", "private"}
+    Controls.Mode[i].String = "shared"
   end
 end -- end update_controls
 
@@ -174,10 +174,19 @@ function connect_channel()
       rx_id = v.rx_id
     end
   end
-
+    
   local mode = Controls.Mode[button_pressed].String
+  if mode == 'video-only' then
+    mode_short = 'v'
+  elseif mode == 'shared' then
+    mode_short = 's'
+  elseif mode == 'exclusive' then
+    mode_short = 'e'
+  elseif mode == 'private' then
+    mode_short = 'p'
+  end
 
-  url = base_url .. string.format('v=5&method=connect_channel&force=1&token=%s&c_id=%s&rx_id=%s&mode=%s', token, c_id, rx_id, mode)
+  url = base_url .. string.format('v=5&method=connect_channel&force=1&token=%s&c_id=%s&rx_id=%s&mode=%s', token, c_id, rx_id, mode_short)
   HttpClient.Download { Url=url, Timeout=3, EventHandler=handle_connect_channel}
 end -- end connect_channel
 
