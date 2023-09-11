@@ -1,6 +1,6 @@
-# BasePlugin
+# Adder Infinity Plugin
 
-This is a template plugin that you can download with some pre-written Lua code to get you started.
+This is a plugin for Adder Infinity KVM, based on a the [BasicPluginFramework](https://bitbucket.org/qsc-communities/basicpluginframework/src/main/) from QSC.
 
 ## PluginCompile
 
@@ -24,9 +24,3 @@ Make sure to map a keyboard shortcut by navigating to File>Preferences>Keyboard 
 < CANCEL > : cancels the build process
   
 Please note that the public version (PluginVersion) only displays first and second octet. The second octets are intended for developer use and version tracking.
-
-## Support
-
-If you have any questions or concerns with this template, please contact qsyscontrolfeedback@qsc.com
-
-Please note that QSC does not support plugins authored by third party developers or companies.

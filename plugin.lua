@@ -1,6 +1,5 @@
--- Basic Framework Plugin
--- by QSC
--- October 2020
+-- Adder Infinity KVM plugin
+-- by Elliott Balsley
 
 -- Information block for the plugin
 --[[ #include "info.lua" ]]
