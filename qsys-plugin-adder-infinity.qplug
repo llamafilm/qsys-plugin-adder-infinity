@@ -1,12 +1,11 @@
--- Basic Framework Plugin
--- by QSC
--- October 2020
+-- Adder Infinity KVM plugin
+-- by Elliott Balsley
 
 -- Information block for the plugin
 PluginInfo = {
   Name = "Adder Infinity Plugin",
   Version = "1.0",
-  BuildVersion = "1.1.0.0",
+  BuildVersion = "1.1.1.0",
   Id = "67cb0d58-1be8-4641-8e64-d1705a74d07e",
   Author = "Elliott Balsley",
   Description = "A plugin for Adder Infinity KVM",
@@ -59,10 +58,6 @@ end
 -- Optional function to define pins on the plugin that are not connected to a Control
 function GetPins(props)
   local pins = {}
-  table.insert(pins,{
-    Name = "Audio Output",
-    Direction = "output",
-  })
   return pins
 end
 
@@ -92,7 +87,6 @@ end
 -- Optional function to define wiring of components used within the plugin
 function GetWiring(props)
   local wiring = {}
-  table.insert( wiring, { "Audio Output", "main_mixer Output 1" } )
   return wiring
 end
 
@@ -174,7 +168,7 @@ function GetControls(props)
     ButtonType = "Trigger",
     Count = 10,
     UserPin = true,
-    PinStyle = 'both',
+    PinStyle = "Both",
     })
   
   -- debug mode

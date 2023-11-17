@@ -73,7 +73,7 @@ table.insert (ctrls,
   ButtonType = "Trigger",
   Count = 10,
   UserPin = true,
-  PinStyle = 'both',
+  PinStyle = "Both",
   })
 
 -- debug mode
