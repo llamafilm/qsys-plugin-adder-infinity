@@ -39,7 +39,8 @@ table.insert (ctrls,
   ButtonType = "Trigger",
   Count = 1,
   Icon = 'Refresh',
-  UserPin = false,
+  UserPin = true,       --REH 1.3
+  PinStyle = 'Input',   --REH 1.3
   })
 
 table.insert (ctrls,

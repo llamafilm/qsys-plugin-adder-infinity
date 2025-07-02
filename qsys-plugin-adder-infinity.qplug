@@ -2,10 +2,30 @@
 -- by Elliott Balsley
 
 -- Information block for the plugin
+--[[
+REVISION HISTORY
+=======================================================================================
+ver   date      Auth  Description
+---------------------------------------------------------------------------------------
+1.1   ???????   EB    v1.1.1.0 of plugin written by Elliott Balsley.
+
+1.2   11MAR25   REH   Slight modification to remove need to press refresh button
+                      when changing IP address etc.
+
+1.3   11MAR25   REH   Minor update to prevent 'compromised' state after 24hrs
+                      * Added timer to request new token every 12 hrs
+                        This will not help if AIM is restarted!
+
+                      * Added code to call login() if connect_channel fails
+                        This will help if AIM is restarted.
+                        
+                      * Enabled input pin for refresh button
+=======================================================================================
+]]
 PluginInfo = {
   Name = "Adder Infinity Plugin",
-  Version = "1.0",
-  BuildVersion = "1.1.1.0",
+  Version = "1.3",
+  BuildVersion = "1.3.0.0",
   Id = "67cb0d58-1be8-4641-8e64-d1705a74d07e",
   Author = "Elliott Balsley",
   Description = "A plugin for Adder Infinity KVM",
@@ -134,7 +154,8 @@ function GetControls(props)
     ButtonType = "Trigger",
     Count = 1,
     Icon = 'Refresh',
-    UserPin = false,
+    UserPin = true,       --REH 1.3
+    PinStyle = 'Input',   --REH 1.3
     })
   
   table.insert (ctrls,
@@ -492,6 +513,7 @@ if Controls then
       end
     end
     Controls.Status.Value = 1
+    login() --REH 1.3
   end -- end handle_connect_channel
   
   
@@ -548,8 +570,25 @@ if Controls then
     HttpClient.Download { Url=url, Timeout=3, EventHandler=handle_disconnect_channel}
   end -- end disconnect_channel
   
-  
+  --REH 1.2
+  Controls.IPAddress.EventHandler = login
+  Controls.Username.EventHandler = login
+  Controls.Password.EventHandler = login
+  --reh
   Controls.Refresh.EventHandler = login
+  
+  
+  --REH 1.3
+  AccessTokenRequestTimer = Timer.New()
+  function AccessTokenRequestTimerHandler(timer, count)
+    print('Requesting new access token ...')
+    login()
+  end
+  AccessTokenRequestTimer.EventHandler = AccessTokenRequestTimerHandler
+  AccessTokenRequestTimer:Start(43200)  --Every 12Hrs
+  --reh
+  
+  
   for i=1,10 do
     Controls.ConnectChannel[i].EventHandler = function()
       button_pressed=i

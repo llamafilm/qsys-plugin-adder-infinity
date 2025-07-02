@@ -149,6 +149,7 @@ function handle_connect_channel(tbl, code, data, err, headers)
     end
   end
   Controls.Status.Value = 1
+  login() --REH 1.3
 end -- end handle_connect_channel
 
 
@@ -205,8 +206,25 @@ function disconnect_channel()
   HttpClient.Download { Url=url, Timeout=3, EventHandler=handle_disconnect_channel}
 end -- end disconnect_channel
 
-
+--REH 1.2
+Controls.IPAddress.EventHandler = login
+Controls.Username.EventHandler = login
+Controls.Password.EventHandler = login
+--reh
 Controls.Refresh.EventHandler = login
+
+
+--REH 1.3
+AccessTokenRequestTimer = Timer.New()
+function AccessTokenRequestTimerHandler(timer, count)
+  print('Requesting new access token ...')
+  login()
+end
+AccessTokenRequestTimer.EventHandler = AccessTokenRequestTimerHandler
+AccessTokenRequestTimer:Start(43200)  --Every 12Hrs
+--reh
+
+
 for i=1,10 do
   Controls.ConnectChannel[i].EventHandler = function()
     button_pressed=i
