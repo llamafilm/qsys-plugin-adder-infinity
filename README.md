@@ -22,5 +22,5 @@ Make sure to map a keyboard shortcut by navigating to File>Preferences>Keyboard 
 < ver_dev > : increments the fourth octet of BuildVersion to denote a new development version
 
 < CANCEL > : cancels the build process
-  
+
 Please note that the public version (PluginVersion) only displays first and second octet. The second octets are intended for developer use and version tracking.
