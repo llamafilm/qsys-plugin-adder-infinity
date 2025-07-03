@@ -1,14 +1,21 @@
-function update_controls()
+-- define global variables
+BaseUrl = ''
+Channels = {}
+Receivers = {}
+Token = ''
+
+
+function UpdateControls()
   -- make a list of receiver names
-  rx_names = {}
-  for k,v in pairs(receivers) do
-    table.insert(rx_names, v['rx_name'])
+  local rx_names = {}
+  for _,rx in pairs(Receivers) do
+    table.insert(rx_names, rx['rx_name'])
   end
 
   -- make a list of channel names
-  chan_names = {}
-  for k,v in pairs(channels) do
-    table.insert(chan_names, v['c_name'])
+  local chan_names = {}
+  for _,chan in pairs(Channels) do
+    table.insert(chan_names, chan['c_name'])
   end
 
   for i=1,10 do
@@ -17,11 +24,11 @@ function update_controls()
     Controls.Mode[i].Choices = {"video-only", "shared", "exclusive", "private"}
     Controls.Mode[i].String = "shared"
   end
-end -- end update_controls
+end -- end UpdateControls
 
 
-function handle_get_devices(tbl, code, data, err, headers)
-  receivers = {}
+function HandleGetDevices(tbl, code, data, err, headers)
+  Receivers = {}
   if data ~= "" then -- make sure there is some response
     XML = xml.eval(data) -- encode input string to lua table and assign to var XML
 
@@ -33,29 +40,30 @@ function handle_get_devices(tbl, code, data, err, headers)
         Controls.Status.Value = 2
       else
         Controls.Status.Value = 0
-        for k,v in pairs(found) do -- iterate across each receiver
-          if type(v) == 'table' then
-            for k2,v2 in pairs(v) do -- iterate across each property of a receiver
-              if v2[0] == 'd_name' then
-                rx_name = v2[1]
-              elseif v2[0] == 'd_id' then
-                rx_id = v2[1]
-              elseif v2[0] == 'c_name' then
-                c_name = v2[1]
+        for _,device in pairs(found) do -- iterate across each receiver
+          if type(device) == 'table' then
+            local rx_name, rx_id, c_name
+            for _,prop in pairs(device) do -- iterate across each property of a receiver
+              if prop[0] == 'd_name' then
+                rx_name = prop[1]
+              elseif prop[0] == 'd_id' then
+                rx_id = prop[1]
+              elseif prop[0] == 'c_name' then
+                c_name = prop[1]
               end
             end
-            table.insert(receivers, {rx_name=rx_name, rx_id=rx_id, c_name=c_name})
+            table.insert(Receivers, {rx_name=rx_name, rx_id=rx_id, c_name=c_name})
           end
         end
       end
     end
   end
-  get_channels()
-end -- end handle_get_devices
+  GetChannels()
+end -- end HandleGetDevices
 
 
-function handle_get_channels(tbl, code, data, err, headers)
-  channels = {}
+function HandleGetChannels(tbl, code, data, err, headers)
+  Channels = {}
   if data ~= "" then -- make sure there is some response
     XML = xml.eval(data) -- encode input string to lua table and assign to var XML
 
@@ -67,38 +75,39 @@ function handle_get_channels(tbl, code, data, err, headers)
         Controls.Status.Value = 2
       else
         Controls.Status.Value = 0
-        for k,v in pairs(found) do -- iterate across each channel
-          if type(v) == 'table' then
-            for k2,v2 in pairs(v) do -- iterate across each property of a channel
-              if v2[0] == 'c_name' then
-                c_name = v2[1]
-              elseif v2[0] == 'c_id' then
-                c_id = v2[1]
+        for _,chan in pairs(found) do -- iterate across each channel
+          if type(chan) == 'table' then
+            local c_name, c_id
+            for _,prop in pairs(chan) do -- iterate across each property of a channel
+              if prop[0] == 'c_name' then
+                c_name = prop[1]
+              elseif prop[0] == 'c_id' then
+                c_id = prop[1]
               end
             end
-            table.insert(channels, {c_name=c_name, c_id=c_id})
+            table.insert(Channels, {c_name=c_name, c_id=c_id})
           end
         end
       end
     end
   end
-  update_controls()
-end -- end handle_get_channels
+  UpdateControls()
+end -- end handle_GetChannels
 
 
-function get_devices()
-  url = base_url .. 'v=2&method=get_devices&device_type=rx&token=' .. token
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=handle_get_devices}
-end  -- end get_devices
+function GetDevices()
+  local url = BaseUrl .. 'v=2&method=get_devices&device_type=rx&token=' .. Token
+  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleGetDevices}
+end  -- end GetDevices
 
 
-function get_channels()
-  url = base_url .. 'v=2&method=get_channels&token=' .. token
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=handle_get_channels}
-end -- end get_channels
+function GetChannels()
+  local url = BaseUrl .. 'v=2&method=get_channels&token=' .. Token
+  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleGetChannels}
+end -- end GetChannels
 
 
-function handle_login(tbl, code, data, err, headers)
+function HandleLogin(tbl, code, data, err, headers)
   if (data ~= "") and (code == 200) then -- make sure there is some response
     XML = xml.eval(data) -- encode input string to lua table and assign to var XML
 
@@ -111,28 +120,28 @@ function handle_login(tbl, code, data, err, headers)
         Controls.Status.String = XML:find("msg")[1]
       else
         Controls.Status.Value = 0
-        token = found[1]
-        get_devices()
+        Token = found[1]
+        GetDevices()
         return
-        --print('API token: ' .. token)
+        --print('API token: ' .. Token)
       end
     end
   else
     Controls.Status.String = string.format('HTTP %.0d', code)
   end
   Controls.Status.Value = 2 -- if anything above failed
-end -- end handle_login
+end -- end HandleLogin
 
 
-function login()
+function Login()
   Controls.Status.Value = 5 -- display initializing status
-  base_url = 'http://' .. Controls.IPAddress.String .. '/api?'
-  url = base_url .. 'v=1&method=login&username=' .. Controls.Username.String .. '&password=' .. Controls.Password.String
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=handle_login}
-end -- end login
+  BaseUrl = 'http://' .. Controls.IPAddress.String .. '/api?'
+  local url = BaseUrl .. 'v=1&method=login&username=' .. Controls.Username.String .. '&password=' .. Controls.Password.String
+  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleLogin}
+end -- end Login
 
 
-function handle_connect_channel(tbl, code, data, err, headers)
+function HandleConnectChannel(tbl, code, data, err, headers)
   if (data ~= "") and (code == 200) then -- make sure there is some response
     XML = xml.eval(data) -- encode input string to lua table and assign to var XML
 
@@ -149,33 +158,35 @@ function handle_connect_channel(tbl, code, data, err, headers)
     end
   end
   Controls.Status.Value = 1
-  login() --REH 1.3
-end -- end handle_connect_channel
+  Login() --REH 1.3
+end -- end HandleConnectChannel
 
 
-function handle_disconnect_channel(tbl, code, data, err, headers)
+function HandleDisconnectChannel(tbl, code, data, err, headers)
   if (data ~= "") and (code == 200) then -- make sure there is some response
     -- don't both parsing response.  It will show an error if Rx is already disconnected
-    connect_channel()
+    ConnectChannel()
   end
-end -- end handle_disconnect_channel
+end -- end HandleDisconnectChannel
 
 
-function connect_channel()
+function ConnectChannel()
+  local c_id, rx_id, mode_short
+
   -- find chan_id
-  for k,v in pairs(channels) do
-    if v.c_name == Controls.Channel[button_pressed].String then
-      c_id = v.c_id
+  for _,chan in pairs(Channels) do
+    if chan.c_name == Controls.Channel[button_pressed].String then
+      c_id = chan.c_id
     end
   end
-  
+
   -- find rx_id
-  for k,v in pairs(receivers) do
-     if v.rx_name == Controls.Receiver[button_pressed].String then
-      rx_id = v.rx_id
+  for _,rx in pairs(Receivers) do
+     if rx.rx_name == Controls.Receiver[button_pressed].String then
+      rx_id = rx.rx_id
     end
   end
-    
+
   local mode = Controls.Mode[button_pressed].String
   if mode == 'video-only' then
     mode_short = 'v'
@@ -187,38 +198,38 @@ function connect_channel()
     mode_short = 'p'
   end
 
-  url = base_url .. string.format('v=5&method=connect_channel&force=1&token=%s&c_id=%s&rx_id=%s&mode=%s', token, c_id, rx_id, mode_short)
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=handle_connect_channel}
-end -- end connect_channel
+  local url = BaseUrl .. string.format('v=5&method=connect_channel&force=1&token=%s&c_id=%s&rx_id=%s&mode=%s', Token, c_id, rx_id, mode_short)
+  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleConnectChannel}
+end -- end ConnectChannel
 
 
-function disconnect_channel()
-  -- disconnect first to avoid error if Rx in use by another user
+function DisconnectChannel()
+  local rx_id
 
   -- find rx_id
-  for k,v in pairs(receivers) do
-     if v.rx_name == Controls.Receiver[button_pressed].String then
-      rx_id = v.rx_id
+  for _,rx in pairs(Receivers) do
+    if rx.rx_name == Controls.Receiver[button_pressed].String then
+      rx_id = rx.rx_id
     end
   end
 
-  url = base_url .. string.format('v=2&method=disconnect_channel&force=1&token=%s&rx_id=%s', token, rx_id)
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=handle_disconnect_channel}
-end -- end disconnect_channel
+  local url = BaseUrl .. string.format('v=2&method=disconnect_channel&force=1&token=%s&rx_id=%s', Token, rx_id)
+  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleDisconnectChannel}
+end -- end DisconnectChannel
 
 --REH 1.2
-Controls.IPAddress.EventHandler = login
-Controls.Username.EventHandler = login
-Controls.Password.EventHandler = login
+Controls.IPAddress.EventHandler = Login
+Controls.Username.EventHandler = Login
+Controls.Password.EventHandler = Login
 --reh
-Controls.Refresh.EventHandler = login
+Controls.Refresh.EventHandler = Login
 
 
 --REH 1.3
 AccessTokenRequestTimer = Timer.New()
 function AccessTokenRequestTimerHandler(timer, count)
   print('Requesting new access token ...')
-  login()
+  Login()
 end
 AccessTokenRequestTimer.EventHandler = AccessTokenRequestTimerHandler
 AccessTokenRequestTimer:Start(43200)  --Every 12Hrs
@@ -228,10 +239,11 @@ AccessTokenRequestTimer:Start(43200)  --Every 12Hrs
 for i=1,10 do
   Controls.ConnectChannel[i].EventHandler = function()
     button_pressed=i
-    disconnect_channel()
+    -- disconnect first to avoid error if Rx in use by another user
+    DisconnectChannel()
   end
 end
 
 -- code that runs on startup
 print('hello world')
-login()
+Login()
