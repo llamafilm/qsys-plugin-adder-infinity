@@ -25,7 +25,7 @@ ver   date      Auth  Description
 PluginInfo = {
   Name = "Adder Infinity Plugin",
   Version = "1.3",
-  BuildVersion = "1.3.0.2",
+  BuildVersion = "1.3.0.4",
   Id = "67cb0d58-1be8-4641-8e64-d1705a74d07e",
   Author = "Elliott Balsley",
   Description = "A plugin for Adder Infinity KVM",
@@ -41,27 +41,7 @@ end
 function GetPrettyName(props)
   return "Adder Infinity KVM v" .. PluginInfo.BuildVersion
 end
-
--- Optional function used if plugin has multiple pages
 PageNames = { "Control" }  --List the pages within the plugin
-function GetPages(props)
-  local pages = {}
-  for ix,name in ipairs(PageNames) do
-    table.insert(pages, {name = PageNames[ix]})
-  end
-  return pages
-end
-
--- Optional function to define model if plugin supports more than one model
-function GetModel(props)
-  local model = {}
-  if props.Model ~= nil and props.Model.Value ~= "" then
-    table.insert(model, { props.Model.Value } )
-  else
-    table.insert(model, { "Base Model" } )
-  end
- return model
-end
 
 -- Define User configurable Properties of the plugin
 function GetProperties()
