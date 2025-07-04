@@ -34,13 +34,6 @@ if CurrentPage == "Control" then
     Size = { 180,16 },
   }
 
-  layout['Refresh'] = {
-    PrettyName = 'Refresh Connection',
-    Position = {gutter+180,y},
-    Size = { 36,16 },
-    Margin = 0,
-  }
-
   table.insert(graphics, {
     Type = "Text",
     HTextAlign = "Right",
@@ -91,7 +84,7 @@ if CurrentPage == "Control" then
 
   table.insert(graphics, {
     Type = "Header",
-    Text = "Channel Connect Buttons",
+    Text = "Channel Connect Trigger Buttons",
     HTextAlign = "Center",
     Position = { 0, y },
     Size = { button_h*10,16 }
@@ -120,22 +113,4 @@ if CurrentPage == "Control" then
       Size = {button_h, 40}
     }
   end
---[[
-  -- layout max 10 buttons per row
-  local num_rows = math.ceil(max_presets / 10)
-  for row=0,num_rows-1 do
-    for col = 1,10 do
-      local preset = row*10 + col
-      if preset > max_presets then break end
-      layout['PresetTrigger '.. preset] =
-        {
-        PrettyName = string.format("Preset~%i", preset),
-        Position = { col*button_h-button_h, y},
-        Style = 'Button',
-        Size = { button_h, button_v },
-        }
-    end
-    y = y + 45 -- move down to next row
-  end
-  ]]
 end

@@ -3,7 +3,7 @@ REVISION HISTORY
 =======================================================================================
 ver   date      Auth  Description
 ---------------------------------------------------------------------------------------
-1.1   ???????   EB    v1.1.1.0 of plugin written by Elliott Balsley.
+1.1   17NOV23   ECB   v1.1.1.0 of plugin written by Elliott Balsley.
 
 1.2   11MAR25   REH   Slight modification to remove need to press refresh button
                       when changing IP address etc.
@@ -16,12 +16,19 @@ ver   date      Auth  Description
                         This will help if AIM is restarted.
 
                       * Enabled input pin for refresh button
+
+1.4   4JUL25    ECB   Use queue to handle responses when two commands are sent simultaneously
+                      Refactor to avoid redundant code
+                      Use consistent variable style and scopes
+                      Refresh auth token automatically when it expires
+                      Remove refresh button and timer
+                      Add debug logging
 =======================================================================================
 ]]
 PluginInfo = {
   Name = "Adder Infinity Plugin",
   Version = "1.3",
-  BuildVersion = "1.3.0.4",
+  BuildVersion = "1.3.0.17",
   Id = "67cb0d58-1be8-4641-8e64-d1705a74d07e",
   Author = "Elliott Balsley",
   Description = "A plugin for Adder Infinity KVM",

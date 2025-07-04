@@ -1,6 +1,23 @@
+-- setup Debug print
+DebugTx, DebugRx, DebugFunction = false, false, false
+DebugPrint = Properties['Debug Print'].Value
+if DebugPrint == 'Tx/Rx' then
+  DebugTx, DebugRx = true, true
+elseif DebugPrint == 'Tx' then
+  DebugTx = true
+elseif DebugPrint == 'Rx' then
+  DebugRx = true
+elseif DebugPrint == 'Function Calls' then
+  DebugFunction = true
+elseif DebugPrint == 'All' then
+  DebugTx, DebugRx, DebugFunction = true, true, true
+end
+
 -- define global variables
+ActionQueue = {}
 BaseUrl = ''
 Channels = {}
+LoginAttempts = 0
 Receivers = {}
 Token = ''
 
@@ -9,13 +26,13 @@ function UpdateControls()
   -- make a list of receiver names
   local rx_names = {}
   for _,rx in pairs(Receivers) do
-    table.insert(rx_names, rx['rx_name'])
+    table.insert(rx_names, rx.name)
   end
 
   -- make a list of channel names
   local chan_names = {}
   for _,chan in pairs(Channels) do
-    table.insert(chan_names, chan['c_name'])
+    table.insert(chan_names, chan.name)
   end
 
   for i=1,10 do
@@ -27,220 +44,227 @@ function UpdateControls()
 end -- end UpdateControls
 
 
-function HandleGetDevices(tbl, code, data, err, headers)
-  Receivers = {}
-  if data ~= "" then -- make sure there is some response
-    XML = xml.eval(data) -- encode input string to lua table and assign to var XML
-
-    -- read device names
-    if XML ~= "" then
-      local found = XML:find("devices")
-      if found == nil then
-        print(data)
-        Controls.Status.Value = 2
-      else
-        Controls.Status.Value = 0
-        for _,device in pairs(found) do -- iterate across each receiver
-          if type(device) == 'table' then
-            local rx_name, rx_id, c_name
-            for _,prop in pairs(device) do -- iterate across each property of a receiver
-              if prop[0] == 'd_name' then
-                rx_name = prop[1]
-              elseif prop[0] == 'd_id' then
-                rx_id = prop[1]
-              elseif prop[0] == 'c_name' then
-                c_name = prop[1]
-              end
-            end
-            table.insert(Receivers, {rx_name=rx_name, rx_id=rx_id, c_name=c_name})
-          end
-        end
-      end
-    end
-  end
-  GetChannels()
-end -- end HandleGetDevices
-
-
-function HandleGetChannels(tbl, code, data, err, headers)
-  Channels = {}
-  if data ~= "" then -- make sure there is some response
-    XML = xml.eval(data) -- encode input string to lua table and assign to var XML
-
-    -- read device names and apply labels to UI
-    if XML ~= "" then
-      local found = XML:find("channels")
-      if found == nil then
-        print(data)
-        Controls.Status.Value = 2
-      else
-        Controls.Status.Value = 0
-        for _,chan in pairs(found) do -- iterate across each channel
-          if type(chan) == 'table' then
-            local c_name, c_id
-            for _,prop in pairs(chan) do -- iterate across each property of a channel
-              if prop[0] == 'c_name' then
-                c_name = prop[1]
-              elseif prop[0] == 'c_id' then
-                c_id = prop[1]
-              end
-            end
-            table.insert(Channels, {c_name=c_name, c_id=c_id})
-          end
-        end
-      end
-    end
-  end
-  UpdateControls()
-end -- end handle_GetChannels
-
-
-function GetDevices()
+function GetReceivers()
+  if DebugFunction then print("Refreshing receivers...") end
   local url = BaseUrl .. 'v=2&method=get_devices&device_type=rx&token=' .. Token
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleGetDevices}
-end  -- end GetDevices
+  HttpClient.Download { Url=url, Timeout=1, EventHandler=HandleHttpResponse}
+end  -- end GetReceivers
 
 
 function GetChannels()
+  if DebugFunction then print("Refreshing channels...") end
   local url = BaseUrl .. 'v=2&method=get_channels&token=' .. Token
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleGetChannels}
+  HttpClient.Download { Url=url, Timeout=1, EventHandler=HandleHttpResponse}
 end -- end GetChannels
 
 
-function HandleLogin(tbl, code, data, err, headers)
-  if (data ~= "") and (code == 200) then -- make sure there is some response
-    XML = xml.eval(data) -- encode input string to lua table and assign to var XML
-
-    -- extract API token from response
-    if XML ~= "" then -- make sure the find string and XML var have data
-      local found = XML:find("token") -- convert the found XML data to a string and assign to var found
-      if found == nil then -- ensure found has data (nil means could not find string)
-        print(data)
-        Controls.Status.Value = 2
-        Controls.Status.String = XML:find("msg")[1]
-      else
-        Controls.Status.Value = 0
-        Token = found[1]
-        GetDevices()
-        return
-        --print('API token: ' .. Token)
-      end
-    end
-  else
-    Controls.Status.String = string.format('HTTP %.0d', code)
-  end
-  Controls.Status.Value = 2 -- if anything above failed
-end -- end HandleLogin
-
-
 function Login()
-  Controls.Status.Value = 5 -- display initializing status
+  if Controls.IPAddress.String == '' then
+    Controls.Status.Value = 4 -- missing
+    return
+  end
+
+  if DebugFunction then print("Refreshing auth token...") end
+  Controls.Status.Value = 5 -- initializing
+  Controls.Status.String = "Refreshing auth token"
   BaseUrl = 'http://' .. Controls.IPAddress.String .. '/api?'
   local url = BaseUrl .. 'v=1&method=login&username=' .. Controls.Username.String .. '&password=' .. Controls.Password.String
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleLogin}
+  HttpClient.Download { Url=url, Timeout=1, EventHandler=HandleHttpResponse}
 end -- end Login
 
 
-function HandleConnectChannel(tbl, code, data, err, headers)
-  if (data ~= "") and (code == 200) then -- make sure there is some response
-    XML = xml.eval(data) -- encode input string to lua table and assign to var XML
+function HandleHttpResponse(tbl, code, data, err, headers)
+  -- handle all HTTP responses and call other functions based on the API method
 
-    if XML ~= "" then -- make sure the find string and XML var have data
-      local found = XML:find("success") -- convert the found XML data to a string and assign to var found
-      if found ~= nil then -- ensure found has data (nil means could not find string)
-        if found[1] == "1" then
-          Controls.Status.Value = 0
-          return
-        else
-          print(XML:find("msg")[1])
+  if DebugRx then print(string.format("HTTP response from '%s': Return Code=%i; Error=%s; Data=%s", tbl.Url, code, err or "None", data or "None")) end
+  if code ~= 200 then
+    Controls.Status.Value = 2
+    if code == 0 then
+      Controls.Status.String = err
+    else
+      Controls.Status.String = string.format('HTTP %i: %s', code, err)
+    end
+    return
+  end
+
+  -- parse XML response string to lua table
+  local ok, response = pcall(function()
+    return xml.eval(data)
+  end)
+
+  local match = response:find('success')
+
+  if not (ok and match) then
+    Controls.Status.Value = 2
+    Controls.Status.String = "Failed to parse XML response"
+    return
+  end
+
+  local success = response:find('success')[1]
+  if success == '0' then
+    local msg = response:find('msg')[1]
+    Controls.Status.Value = 2
+    Controls.Status.String = msg
+
+    -- retry login if the token is expired
+    if msg == 'Login required' then
+      if DebugFunction then print("Refreshing auth token...") end
+      Login()
+    else
+      return
+    end
+  end
+
+  Controls.Status.Value = 0
+  local method = tbl.Url:match("method=([^&]+)")
+
+  if (method == 'login') then
+    OnLogin(response)
+  elseif method == 'get_devices' then
+    OnGetReceivers(response)
+  elseif method == 'get_channels' then
+    OnGetChannels(response)
+  elseif method == 'disconnect_channel' then
+    if DebugFunction then print("Disconnected!") end
+  elseif method == 'connect_channel' then
+    if DebugFunction then print("Connected!") end
+  else
+    Controls.Status.Value = 1
+    Controls.Status.String = string.format("Unknown method: %s", method)
+  end
+end -- end HandleHttpResponse
+
+
+-- extract API token from response
+function OnLogin(response)
+  Token = response:find("token")[1]
+  --print('API token: ' .. Token)
+  GetReceivers()
+  GetChannels()
+end -- end OnLogin
+
+
+-- refresh global Channels table
+function OnGetChannels(response)
+  Channels = {}
+
+  local channels = response:find("channels")
+  for _,chan in pairs(channels) do -- iterate across each channel
+    if type(chan) == 'table' then
+      local c_name, c_id
+      for _,prop in pairs(chan) do -- iterate across each property of a channel
+        if prop[0] == 'c_name' then
+          c_name = prop[1]
+        elseif prop[0] == 'c_id' then
+          c_id = prop[1]
         end
       end
+      table.insert(Channels, {name=c_name, id=c_id})
     end
   end
-  Controls.Status.Value = 1
-  Login() --REH 1.3
-end -- end HandleConnectChannel
+  if DebugFunction then print(string.format("Got %i channels", #Channels)) end
+  UpdateControls()
+end -- end OnGetChannels
 
 
-function HandleDisconnectChannel(tbl, code, data, err, headers)
-  if (data ~= "") and (code == 200) then -- make sure there is some response
-    -- don't both parsing response.  It will show an error if Rx is already disconnected
-    ConnectChannel()
+-- refresh global Receivers table
+function OnGetReceivers(response)
+  Receivers = {}
+
+  local devices = response:find("devices")
+  for _,device in pairs(devices) do -- iterate across each receiver
+    if type(device) == 'table' then
+      local rx_name, rx_id, rx_username
+      for _,prop in pairs(device) do -- iterate across each property of a receiver
+        if prop[0] == 'd_name' then
+          rx_name = prop[1]
+        elseif prop[0] == 'd_id' then
+          rx_id = prop[1]
+        elseif prop[0] == 'u_username' then
+          rx_username = prop[1]
+        end
+      end
+      table.insert(Receivers, {name=rx_name, id=rx_id, username=rx_username})
+    end
   end
-end -- end HandleDisconnectChannel
+  if DebugFunction then print(string.format("Got %i receivers", #Receivers)) end
 
+  -- Run the next action in the queue. If multiple buttons are pushed simultaneously,
+  -- the responses may come out of order. So then we'll make the connections out of
+  -- order, but that shouldn't be a problem.
+  if #ActionQueue > 0 then
+    local action = table.remove(ActionQueue, 1)
+    action()
+  end
+end -- end OnGetReceivers
 
-function ConnectChannel()
-  local c_id, rx_id, mode_short
-
-  -- find chan_id
-  for _,chan in pairs(Channels) do
-    if chan.c_name == Controls.Channel[button_pressed].String then
-      c_id = chan.c_id
+function ConnectChannel(button_pressed)
+  -- find channel by name
+  local chan
+  for _,channel in pairs(Channels) do
+    if channel.name == Controls.Channel[button_pressed].String then
+      chan = channel
+      break
     end
   end
 
-  -- find rx_id
-  for _,rx in pairs(Receivers) do
-     if rx.rx_name == Controls.Receiver[button_pressed].String then
-      rx_id = rx.rx_id
+  -- find receiver by name
+  local rx
+  for _,receiver in pairs(Receivers) do
+     if receiver.name == Controls.Receiver[button_pressed].String then
+      rx = receiver
+      break
     end
   end
 
-  local mode = Controls.Mode[button_pressed].String
-  if mode == 'video-only' then
-    mode_short = 'v'
-  elseif mode == 'shared' then
-    mode_short = 's'
-  elseif mode == 'exclusive' then
-    mode_short = 'e'
-  elseif mode == 'private' then
-    mode_short = 'p'
+  if DebugFunction then print(string.format("Connecting channel '%s' to receiver '%s'", chan.name, rx.name)) end
+
+  -- if Rx is in use by another user, we have to disconnect it first
+  if rx.username ~= nil and rx.username ~= Controls.Username.String then
+    if DebugFunction then print(string.format("Receiver is in use by %s.", rx.username)) end
+    DisconnectChannel(button_pressed)
   end
 
-  local url = BaseUrl .. string.format('v=5&method=connect_channel&force=1&token=%s&c_id=%s&rx_id=%s&mode=%s', Token, c_id, rx_id, mode_short)
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleConnectChannel}
+  local mode = Controls.Mode[button_pressed].String:sub(1,1)
+  local url = string.format(
+    '%sv=5&method=connect_channel&force=1&token=%s&c_id=%s&rx_id=%s&mode=%s',
+    BaseUrl, Token, chan.id, rx.id, mode
+  )
+  HttpClient.Download { Url=url, Timeout=1, EventHandler=HandleHttpResponse}
 end -- end ConnectChannel
 
 
-function DisconnectChannel()
-  local rx_id
-
-  -- find rx_id
-  for _,rx in pairs(Receivers) do
-    if rx.rx_name == Controls.Receiver[button_pressed].String then
-      rx_id = rx.rx_id
+function DisconnectChannel(button_pressed)
+  -- find receiver by name
+  local rx
+  for _,receiver in pairs(Receivers) do
+    if receiver.name == Controls.Receiver[button_pressed].String then
+      rx = receiver
     end
   end
 
-  local url = BaseUrl .. string.format('v=2&method=disconnect_channel&force=1&token=%s&rx_id=%s', Token, rx_id)
-  HttpClient.Download { Url=url, Timeout=3, EventHandler=HandleDisconnectChannel}
+  if DebugFunction then print(string.format("Disconnecting receiver '%s'", rx.name)) end
+
+  local url = string.format(
+    '%sv=2&method=disconnect_channel&force=1&token=%s&rx_id=%s',
+    BaseUrl, Token, rx.id
+  )
+  HttpClient.Download { Url=url, Timeout=1, EventHandler=HandleHttpResponse}
 end -- end DisconnectChannel
 
---REH 1.2
+
 Controls.IPAddress.EventHandler = Login
 Controls.Username.EventHandler = Login
 Controls.Password.EventHandler = Login
---reh
-Controls.Refresh.EventHandler = Login
-
-
---REH 1.3
-AccessTokenRequestTimer = Timer.New()
-function AccessTokenRequestTimerHandler(timer, count)
-  print('Requesting new access token ...')
-  Login()
-end
-AccessTokenRequestTimer.EventHandler = AccessTokenRequestTimerHandler
-AccessTokenRequestTimer:Start(43200)  --Every 12Hrs
---reh
-
 
 for i=1,10 do
   Controls.ConnectChannel[i].EventHandler = function()
-    button_pressed=i
-    -- disconnect first to avoid error if Rx in use by another user
-    DisconnectChannel()
+    -- refresh devices first to ensure username is current
+    -- add global callback to the queue so it runs after devices are refreshed
+    if Controls.Channel[i].String ~= '' and Controls.Receiver[i].String ~= '' then
+      table.insert(ActionQueue, function() ConnectChannel(i) end)
+      GetReceivers()
+    end
   end
 end
 
