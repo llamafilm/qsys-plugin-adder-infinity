@@ -268,6 +268,5 @@ for i=1,10 do
   end
 end
 
--- code that runs on startup
-print('hello world')
+-- run on startup
 Login()
