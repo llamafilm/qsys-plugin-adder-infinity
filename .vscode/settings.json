@@ -6,5 +6,18 @@
   },
   "files.autoSave": "off",
   "files.autoSaveDelay": 500,
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "Lua.diagnostics.globals": [
+    "Controls",
+    "HttpClient",
+    "Properties",
+    "Timer",
+    "components",
+    "ctrls",
+    "graphics",
+    "layout",
+    "props",
+    "xml"
+  ],
+  "Lua.runtime.version": "Lua 5.3"
 }
