@@ -1,8 +1,18 @@
 # Adder Infinity Plugin
 
-This is a plugin for Adder Infinity KVM, based on a the [BasicPluginFramework](https://bitbucket.org/qsc-communities/basicpluginframework/src/main/) from QSC.
+This is a plugin to control an Adder Infinity KVM. Features:
+
+- 10 trigger buttons with input pins which connect a channel to a destination 
+- Read the channel and destination names to populate the UI controls
+- Each trigger button is configured with a video mode (shared, exclusive, private, or video-only)
+- Communicate with AIM server via HTTP with username & password
+- HTTPS is not supported
+
+![screenshot](assets/screenshot.png)
 
 ## PluginCompile
+
+This plugin is based on a the [BasicPluginFramework](https://bitbucket.org/qsc-communities/basicpluginframework/src/main/) from QSC.
 
 This is a submodule built for VS Code. Please note it is not intended to be used for any other source code editors.
 
@@ -22,5 +32,5 @@ Make sure to map a keyboard shortcut by navigating to File>Preferences>Keyboard 
 < ver_dev > : increments the fourth octet of BuildVersion to denote a new development version
 
 < CANCEL > : cancels the build process
-  
+
 Please note that the public version (PluginVersion) only displays first and second octet. The second octets are intended for developer use and version tracking.
