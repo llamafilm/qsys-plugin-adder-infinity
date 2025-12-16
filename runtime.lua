@@ -17,7 +17,6 @@ end
 ActionQueue = {}
 BaseUrl = ''
 Channels = {}
-LoginAttempts = 0
 Receivers = {}
 Token = ''
 
@@ -108,7 +107,7 @@ function HandleHttpResponse(tbl, code, data, err, headers)
 
     -- retry login if the token is expired
     if msg == 'Login required' then
-      if DebugFunction then print("Refreshing auth token...") end
+      print("Refreshing auth token...")
       Login()
     else
       return
@@ -125,9 +124,9 @@ function HandleHttpResponse(tbl, code, data, err, headers)
   elseif method == 'get_channels' then
     OnGetChannels(response)
   elseif method == 'disconnect_channel' then
-    if DebugFunction then print("Disconnected!") end
+    if DebugFunction then print("Disconnected channel!") end
   elseif method == 'connect_channel' then
-    if DebugFunction then print("Connected!") end
+    if DebugFunction then print("Connected channel!") end
   else
     Controls.Status.Value = 1
     Controls.Status.String = string.format("Unknown method: %s", method)
@@ -138,7 +137,6 @@ end -- end HandleHttpResponse
 -- extract API token from response
 function OnLogin(response)
   Token = response:find("token")[1]
-  --print('API token: ' .. Token)
   GetReceivers()
   GetChannels()
 end -- end OnLogin
