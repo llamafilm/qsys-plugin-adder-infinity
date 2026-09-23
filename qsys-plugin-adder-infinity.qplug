@@ -24,12 +24,14 @@ ver   date      Auth  Description
                       Refresh auth token automatically when it expires
                       Remove refresh button and timer
                       Add debug logging
+
+1.5   23SEP26   ECB   Add HTTPS toggle for AIM server connection
 =======================================================================================
 ]]
 PluginInfo = {
   Name = "Adder Infinity Plugin",
-  Version = "1.4",
-  BuildVersion = "1.4.1.0",
+  Version = "1.5",
+  BuildVersion = "1.5.0.0",
   Id = "67cb0d58-1be8-4641-8e64-d1705a74d07e",
   Author = "Elliott Balsley",
   Description = "A plugin for Adder Infinity KVM",
@@ -78,12 +80,20 @@ function GetControls(props)
   })
   
   table.insert (ctrls, {
+    Name = "UseHttps",
+    ControlType = "Button",
+    ButtonType = "Toggle",
+    Count = 1,
+    UserPin = false,
+  })
+
+  table.insert (ctrls, {
     Name = "Username",
     ControlType = "Text",
     Count = 1,
     UserPin = false,
   })
-  
+
   table.insert (ctrls, {
     Name = "Password",
     ControlType = "Text",
@@ -190,7 +200,23 @@ function GetControlLayout(props)
     }
   
     y = y+16
-  
+
+    table.insert(graphics, {
+      Type = "Text",
+      HTextAlign = "Right",
+      Text = "Protocol",
+      Position = { 0, y },
+      Size = { 76,16 }
+    })
+
+    layout['UseHttps'] = {
+      PrettyName = 'Use HTTPS',
+      Position = {gutter,y},
+      Size = { 60,16 },
+    }
+
+    y = y+16
+
     table.insert(graphics, {
       Type = "Text",
       HTextAlign = "Right",
@@ -198,13 +224,13 @@ function GetControlLayout(props)
       Position = { 0, y },
       Size = { 76,16 }
     })
-  
+
     layout['Username'] = {
       PrettyName = 'Username',
       Position = {gutter,y},
       Size = { 180,16 },
     }
-  
+
     y = y+16
   
     table.insert(graphics, {
@@ -320,15 +346,18 @@ if Controls then
   
   
   function Login()
+    local protocol = Controls.UseHttps.Boolean and 'https' or 'http'
+    Controls.UseHttps.Legend = protocol
+
     if Controls.IPAddress.String == '' then
       Controls.Status.Value = 4 -- missing
       return
     end
-  
+
     if DebugFunction then print("Refreshing auth token...") end
     Controls.Status.Value = 5 -- initializing
     Controls.Status.String = "Refreshing auth token"
-    BaseUrl = 'http://' .. Controls.IPAddress.String .. '/api?'
+    BaseUrl = protocol .. '://' .. Controls.IPAddress.String .. '/api?'
     local url = BaseUrl .. 'v=1&method=login&username=' .. Controls.Username.String .. '&password=' .. Controls.Password.String
     HttpClient.Download { Url=url, Timeout=1, EventHandler=HandleHttpResponse}
   end -- end Login
@@ -513,7 +542,10 @@ if Controls then
   end -- end DisconnectChannel
   
   
+  Controls.UseHttps.Legend = Controls.UseHttps.Boolean and 'https' or 'http'
+
   Controls.IPAddress.EventHandler = Login
+  Controls.UseHttps.EventHandler = Login
   Controls.Username.EventHandler = Login
   Controls.Password.EventHandler = Login
   

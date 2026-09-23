@@ -53,6 +53,22 @@ if CurrentPage == "Control" then
   table.insert(graphics, {
     Type = "Text",
     HTextAlign = "Right",
+    Text = "Protocol",
+    Position = { 0, y },
+    Size = { 76,16 }
+  })
+
+  layout['UseHttps'] = {
+    PrettyName = 'Use HTTPS',
+    Position = {gutter,y},
+    Size = { 60,16 },
+  }
+
+  y = y+16
+
+  table.insert(graphics, {
+    Type = "Text",
+    HTextAlign = "Right",
     Text = "Username",
     Position = { 0, y },
     Size = { 76,16 }

@@ -6,6 +6,14 @@ table.insert (ctrls, {
 })
 
 table.insert (ctrls, {
+  Name = "UseHttps",
+  ControlType = "Button",
+  ButtonType = "Toggle",
+  Count = 1,
+  UserPin = false,
+})
+
+table.insert (ctrls, {
   Name = "Username",
   ControlType = "Text",
   Count = 1,

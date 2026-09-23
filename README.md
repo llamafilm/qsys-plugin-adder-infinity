@@ -5,8 +5,7 @@ This is a plugin to control an Adder Infinity KVM. Features:
 - 10 trigger buttons with input pins which connect a channel to a destination 
 - Read the channel and destination names to populate the UI controls
 - Each trigger button is configured with a video mode (shared, exclusive, private, or video-only)
-- Communicate with AIM server via HTTP with username & password
-- HTTPS is not supported
+- Communicate with AIM server via HTTP with username & password.  HTTPS is supported but Q-Sys does not validate certificates.
 
 ![screenshot](assets/screenshot.png)
 

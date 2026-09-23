@@ -23,12 +23,14 @@ ver   date      Auth  Description
                       Refresh auth token automatically when it expires
                       Remove refresh button and timer
                       Add debug logging
+
+1.5   23SEP26   ECB   Add HTTPS toggle for AIM server connection
 =======================================================================================
 ]]
 PluginInfo = {
   Name = "Adder Infinity Plugin",
-  Version = "1.4",
-  BuildVersion = "1.4.1.0",
+  Version = "1.5",
+  BuildVersion = "1.5.0.0",
   Id = "67cb0d58-1be8-4641-8e64-d1705a74d07e",
   Author = "Elliott Balsley",
   Description = "A plugin for Adder Infinity KVM",
