@@ -58,6 +58,9 @@ end -- end GetChannels
 
 
 function Login()
+  local protocol = Controls.UseHttps.Boolean and 'https' or 'http'
+  Controls.UseHttps.Legend = protocol
+
   if Controls.IPAddress.String == '' then
     Controls.Status.Value = 4 -- missing
     return
@@ -66,7 +69,7 @@ function Login()
   if DebugFunction then print("Refreshing auth token...") end
   Controls.Status.Value = 5 -- initializing
   Controls.Status.String = "Refreshing auth token"
-  BaseUrl = 'http://' .. Controls.IPAddress.String .. '/api?'
+  BaseUrl = protocol .. '://' .. Controls.IPAddress.String .. '/api?'
   local url = BaseUrl .. 'v=1&method=login&username=' .. Controls.Username.String .. '&password=' .. Controls.Password.String
   HttpClient.Download { Url=url, Timeout=1, EventHandler=HandleHttpResponse}
 end -- end Login
@@ -251,7 +254,10 @@ function DisconnectChannel(button_pressed)
 end -- end DisconnectChannel
 
 
+Controls.UseHttps.Legend = Controls.UseHttps.Boolean and 'https' or 'http'
+
 Controls.IPAddress.EventHandler = Login
+Controls.UseHttps.EventHandler = Login
 Controls.Username.EventHandler = Login
 Controls.Password.EventHandler = Login
 
